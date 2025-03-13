@@ -45,7 +45,7 @@ const userSchema = new Schema({
 
 userSchema.pre("save", async function(next){
     if(this.isModified("password")){
-        this.password = bcrypt(this.password)
+        this.password = await bcrypt(this.password)
     }
     next();
 });
