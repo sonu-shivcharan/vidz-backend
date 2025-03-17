@@ -7,6 +7,8 @@ cloudinary.config({
 });
 
 async function uploadFileToCloudinary(pathToFile){
+
+    
     try {
         if(!pathToFile) return null;
 
@@ -14,6 +16,7 @@ async function uploadFileToCloudinary(pathToFile){
             resource_type:"auto",
         })
         console.log("File uploaded to cloudinary succsfully ", response.url);  
+        fs.unlinkSync(pathToFile)
         return response
           
     } catch (error) {
