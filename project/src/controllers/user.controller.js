@@ -1,5 +1,5 @@
 import asyncHandler from "../utils/asyncHandler.js";
-import ApiError from "../utils/apiErrors.js";
+import ApiError from "../utils/apiError.js";
 import ApiResponse from "../utils/apiResponse.js";
 import { User } from "../models/user.model.js";
 import { uploadFileToCloudinary } from "../utils/cloudinary.js";
@@ -14,8 +14,11 @@ const generateAccessAndRefreshToken = async (userId) => {
     const refreshToken = user.generateRefreshToken();
 
     await user.save({ validateBeforeSave: false });
+    // console.log(refreshToken, accessToken);
+
     return { accessToken, refreshToken };
   } catch (error) {
+    console.log("error while generating token", error);
     throw new ApiError(500, "Something went wrong while generating tokens");
   }
 };
@@ -93,7 +96,8 @@ const registerUser = asyncHandler(async (req, res) => {
 // 7. send response login succes
 const loginUser = asyncHandler(async (req, res) => {
   const { email, username, password } = await req.body;
-  if (!email || !username) {
+  console.log(email, username);
+  if (!(email || username)) {
     throw new ApiError(400, "Username or email is required");
   }
 
@@ -108,7 +112,9 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Invalid credentials");
   }
 
-  const { accessToken, refreshToken } = generateAccessAndRefreshToken(user._id);
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+    user._id
+  );
 
   const loggedInUser = await User.findById(user._id).select(
     "-password -refreshToken"
@@ -118,22 +124,19 @@ const loginUser = asyncHandler(async (req, res) => {
     httpOnly: true,
     secure: true,
   };
-
-  return res
-    .status(200)
-    .cookie("accessToken", accessToken, options)
-    .cookie("refreshToken", refreshToken, options)
-    .json(
-      new ApiResponse(
-        200,
-        {
-          user: loggedInUser,
-          accessToken,
-          refreshToken,
-        },
-        "Login success"
-      )
-    );
+  res.cookie("accessToken", accessToken, options);
+  res.cookie("refreshToken", refreshToken, options);
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        user: loggedInUser,
+        accessToken,
+        refreshToken,
+      },
+      "Login success"
+    )
+  );
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
@@ -153,9 +156,9 @@ const logoutUser = asyncHandler(async (req, res) => {
     httpOnly: true,
     secure: true,
   };
-  res.status(200).clearCookies("accessToken", options)
-  .clearCookies("refreshToken", options)
-  .json(new ApiResponse(200, {}, "Logout success"))
+  res.clearCookie("accessToken", options);
+  res.clearCookie("refreshToken", options);
+  return res.status(200).json(new ApiResponse(200, {}, "Logout success"));
 });
 
 export { registerUser, loginUser, logoutUser };
