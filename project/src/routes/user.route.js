@@ -21,7 +21,9 @@ router.route("/register").post(
 
 
 router.route("/login").post(loginUser);
-
+router.route("/test").get((req, res)=>{
+    return res.json({message:"Tets"})
+})
 // secured routes 
 
 router.route("/logout").post(verifyJWT, logoutUser);
