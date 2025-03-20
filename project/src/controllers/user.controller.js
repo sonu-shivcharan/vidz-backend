@@ -17,10 +17,12 @@ const options = {
 const generateAccessAndRefreshToken = async (userId) => {
   try {
     const user = await User.findById(userId);
+    console.log("after injecting refresh token", user);
     const accessToken = user.generateAccessToken();
     const refreshToken = user.generateRefreshToken();
     user.refreshToken = refreshToken;
-    await user.save({ validateBeforeSave: false });
+    await user.save({validateBeforeSave:false});
+    
     // console.log(refreshToken, accessToken);
 
     return { accessToken, refreshToken };
@@ -163,18 +165,26 @@ const logoutUser = asyncHandler(async (req, res) => {
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
   const refreshTokenFromClient = (await req.cookies?.refreshToken) || (await req.body.refreshToken);
+  console.log("resfreshTokenFrom client", refreshTokenFromClient);
+  
   if (!refreshTokenFromClient) {
+    console.log("token not  recieved");
     throw new ApiError(400, "Invalid refresh token");
   }
   try {
+    console.log("entered try block");
     const decodedToken = jwt.verify(
       refreshTokenFromClient,
       process.env.REFRESH_TOKEN_SECRET
     );
-    const user = User.findById(decodedToken?._id);
+    console.log("decoded token", decodedToken);
+
+    const user = await User.findById(decodedToken?._id);
     if (!user) {
       throw new ApiError(401, "Invalid refresh token");
     }
+    console.log("refresh token from user db", user);
+    
     if (refreshTokenFromClient !== user?.refreshToken) {
       throw new ApiError(401, "Refresh token is expired!");
     }
@@ -195,7 +205,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
         )
       );
   } catch (error) {
-    throw new ApiError(401, error?.message || "Invalid refresh token  ")
+    throw new ApiError(401, error?.message || "Invalid refresh token ")
   }
 });
 
