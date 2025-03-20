@@ -25,7 +25,7 @@ const generateAccessAndRefreshToken = async (userId) => {
 
 const registerUser = asyncHandler(async (req, res) => {
   const { email, password, fullName, username } = await req.body;
-
+  console.log("/register", email, fullName)
   if (
     [email, password, fullName, username].some((field) => field?.trim() === "")
   ) {
@@ -42,11 +42,8 @@ const registerUser = asyncHandler(async (req, res) => {
     );
   }
   const files = req.files;
-  console.log(files);
-  const avatarLocalPath = files?.avatar[0]?.path;
-  const coverImageLocalPath =
-    files?.coverImage?.length > 0 ? files.coverImage[0].path : "";
-  console.log("coverImag", coverImageLocalPath);
+  const avatarLocalPath = (files?.avatar?.length > 0 ) ?  files.avatar[0].path : "";
+  const coverImageLocalPath = (files?.coverImage?.length > 0) ? files.coverImage[0].path : "";
 
   if (!avatarLocalPath) {
     throw new ApiError(400, "Avatar file is required");
@@ -56,13 +53,12 @@ const registerUser = asyncHandler(async (req, res) => {
   let coverImage = "";
   if (coverImageLocalPath) {
     coverImage = await uploadFileToCloudinary(coverImageLocalPath);
-    // console.log(coverImage);
   }
   if (!avatar) {
     throw new ApiError(400, "Avatar file is required");
   }
 
-  console.log("After uploading to cloudinary", avatar);
+  console.log("upload avatar success");
   const user = await User.create({
     fullName,
     email,
@@ -96,7 +92,7 @@ const registerUser = asyncHandler(async (req, res) => {
 // 7. send response login succes
 const loginUser = asyncHandler(async (req, res) => {
   const { email, username, password } = await req.body;
-  console.log(email, username);
+  console.log("/login ", email, username);
   if (!(email || username)) {
     throw new ApiError(400, "Username or email is required");
   }
@@ -151,7 +147,7 @@ const logoutUser = asyncHandler(async (req, res) => {
       new: true,
     }
   );
-
+  console.log("/logout ", req.user._id);
   const options = {
     httpOnly: true,
     secure: true,
@@ -160,5 +156,7 @@ const logoutUser = asyncHandler(async (req, res) => {
   res.clearCookie("refreshToken", options);
   return res.status(200).json(new ApiResponse(200, {}, "Logout success"));
 });
+
+
 
 export { registerUser, loginUser, logoutUser };
