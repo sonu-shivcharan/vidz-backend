@@ -2,23 +2,14 @@ import asyncHandler from "../utils/asyncHandler.js";
 import ApiError from "../utils/apiError.js";
 import ApiResponse from "../utils/apiResponse.js";
 import { User } from "../models/user.model.js";
-import { deleteFileFromCloudinary, uploadFileToCloudinary } from "../utils/cloudinary.js";
+import { deleteFileFromCloudinary, uploadFileToCloudinary, getAssetIdFromURL } from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
 
 const options = {
   httpOnly: true,
   secure: true,
 };
-const getAssestIdFromURL = (url) => {
-  const regex = /\/([^\/]+)\.jpg$/;
-  const match = url.match(regex);
 
-  if (match) {
-    const extractedPart = match[1];
-    return extractedPart;
-  } 
-  return false;
-};
 // step1 parse the body  and extract username password
 // step2 check is user already exists
 //step2 if not the create user
@@ -274,7 +265,8 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
 });
 
 const updateUserAvatar = asyncHandler(async (req, res) => {
-  const avatarLocalPath = await req.file?.path;
+  const files = req.files;
+  const avatarLocalPath = files?.avatar?.length > 0 ? files.avatar[0].path : "";
   if (!avatarLocalPath) {
     throw new ApiError(400, "Avatar is required");
   }
@@ -282,7 +274,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
   if (!avatar?.url) {
     throw new ApiError(500, "Failed to upload file to cloudinary");
   }
-  const avatarId = getAssestIdFromURL(req.user.avatar);
+  const avatarId = getAssetIdFromURL(req.user.avatar);
 
   const user = await User.findByIdAndUpdate(
     req.user._id,
@@ -295,7 +287,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
   ).select("-password");
   if(avatarId){
     const resp = await deleteFileFromCloudinary(avatarId);
-    console.log(resp)
+    console.log("file deleted",resp)
   }
   return res
     .status(200)
@@ -327,6 +319,14 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, user, "CoverImage updated successfully"));
 });
+
+
+
+
+
+
+
+
 export {
   registerUser,
   loginUser,
