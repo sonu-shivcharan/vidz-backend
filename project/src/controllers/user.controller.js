@@ -8,6 +8,7 @@ import {
   getAssetIdFromURL,
 } from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 const options = {
   httpOnly: true,
@@ -323,6 +324,61 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, user, "CoverImage updated successfully"));
 });
 
+const getUserWatchHistory = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  const watchHistory = await User.aggregate([
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectId(userId),
+      },
+    },
+    {
+      $lookup: {
+        from: "videos",
+        localField: "watchHistory",
+        foreignField: "_id",
+        as: "watchHistory",
+        pipeline: [
+          {
+            $lookup: {
+              from: "users",
+              localField: "userId",
+              foreignField: "_id",
+              as: "owner",
+              pipeline: [
+                {
+                  $project: {
+                    _id: 1,
+                    username: 1,
+                    avatar: 1,
+                    fullName: 1,
+                  },
+                },
+              ],
+            },
+          },
+          {
+            $addFields:{
+              owner: {
+                $arrayElemAt: ["$owner", 0],
+              }
+            }
+          }
+        ],
+      },
+    },
+  ]);
+
+  return res
+  .status(200).json(
+    new ApiResponse(
+      200,
+      watchHistory[0]?.watchHistory || [],
+      "Fetched watch history successfully"
+    )
+  );
+});
+
 const getUserChannelProfile = asyncHandler(async (req, res) => {
   const { username } = req.params;
   if (!username?.trim()) {
@@ -380,13 +436,17 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     }
   ]);
 
+
+
+
+
+
 console.log('channel', channel)
 if(!channel?.length){
   throw ApiError(404, "Channel not found")
 }
 return res.status(200).json(new ApiResponse(200,channel[0], "Channel fetched successfully"));
 });
-
 export {
   registerUser,
   loginUser,
@@ -397,5 +457,6 @@ export {
   updateAccountDetails,
   updateUserAvatar,
   updateUserCoverImage,
+  getUserWatchHistory,
   getUserChannelProfile
 };
