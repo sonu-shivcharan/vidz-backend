@@ -10,6 +10,8 @@ import {
   registerUser,
   updateAccountDetails,
   updateUserAvatar,
+  test,
+  updateUserCoverImage,
 } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
@@ -43,28 +45,21 @@ router.route("/change-password").patch(verifyJWT, changePassword);
 router.route("/update").patch(verifyJWT, updateAccountDetails);
 router.route("/update-avatar").post(
   verifyJWT,
-  upload.fields([
-    {
-      name: "avatar",
-      maxCount: 1,
-    },
-  ]),
+  upload.single("avatar"),
   updateUserAvatar
+);
+
+router.route("/update-cover-image").post(
+  verifyJWT,
+  upload.single("coverImage"),
+  updateUserCoverImage
 );
 
 router.route("/:username").get(verifyJWT, getUserChannelProfile);
 
-router.route("/update-cover").post(
-  verifyJWT,
-  upload.fields([
-    {
-      name: "coverImage",
-      maxCount: 1,
-    },
-  ]),
-  updateUserAvatar
-);
-
 router.route("/watch-history").get(verifyJWT, getUserWatchHistory);
+
+
+router.route("/test/file").post(verifyJWT, upload.single("avatar"), test)
 
 export default router;

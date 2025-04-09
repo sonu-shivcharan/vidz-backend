@@ -270,8 +270,9 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
 });
 
 const updateUserAvatar = asyncHandler(async (req, res) => {
-  const files = req.files;
-  const avatarLocalPath = files?.avatar?.length > 0 ? files.avatar[0].path : "";
+  const file = req.file;
+  const avatarLocalPath = file?.path;
+  console.log('avatarLocalPath', avatarLocalPath, file)
   if (!avatarLocalPath) {
     throw new ApiError(400, "Avatar is required");
   }
@@ -447,6 +448,12 @@ if(!channel?.length){
 }
 return res.status(200).json(new ApiResponse(200,channel[0], "Channel fetched successfully"));
 });
+
+
+const test = asyncHandler(async (req, res)=>{
+  console.log('req', await req.file)
+  return res.json(new ApiResponse(200, "Runing", "Running"))
+})
 export {
   registerUser,
   loginUser,
@@ -458,5 +465,6 @@ export {
   updateUserAvatar,
   updateUserCoverImage,
   getUserWatchHistory,
-  getUserChannelProfile
+  getUserChannelProfile,
+  test
 };
