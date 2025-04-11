@@ -5,7 +5,6 @@ import { User } from "../models/user.model.js";
 import {
   deleteFileFromCloudinary,
   uploadFileToCloudinary,
-  getAssetIdFromURL,
 } from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
@@ -280,7 +279,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
   if (!avatar?.url) {
     throw new ApiError(500, "Failed to upload file to cloudinary");
   }
-  const avatarId = getAssetIdFromURL(req.user.avatar);
+  // const avatarId = getAssetIdFromURL(req.user.avatar);
 
   const user = await User.findByIdAndUpdate(
     req.user._id,
@@ -291,10 +290,12 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     },
     { new: true }
   ).select("-password");
-  if (avatarId) {
-    const resp = await deleteFileFromCloudinary(avatarId);
+  const prevAvatarUrl = req.user.avatar;
+  if(prevAvatarUrl){
+    const resp = await deleteFileFromCloudinary(prevAvatarUrl);
     console.log("file deleted", resp);
   }
+
   return res
     .status(200)
     .json(new ApiResponse(200, user, "Avatar upadted successfully"));
@@ -319,18 +320,25 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     },
     { new: true }
   ).select("-password");
-
+  const prevCoverImageUrl = req.user.coverImage;
+  if(prevCoverImageUrl){
+    const result = await deleteFileFromCloudinary(prevCoverImageUrl)
+    if(result){
+      console.log('coverImage deleted', coverImage)
+    }
+  }
   return res
     .status(200)
     .json(new ApiResponse(200, user, "CoverImage updated successfully"));
 });
 
 const getUserWatchHistory = asyncHandler(async (req, res) => {
-  const userId = req.user._id;
+  const userId = req.user._id
+  console.log('object id', userId)
   const watchHistory = await User.aggregate([
     {
       $match: {
-        _id: new mongoose.Types.ObjectId(userId),
+        _id: new mongoose.Types.ObjectId(String(userId))
       },
     },
     {
@@ -444,7 +452,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
 
 console.log('channel', channel)
 if(!channel?.length){
-  throw ApiError(404, "Channel not found")
+  throw new ApiError(404, "Channel not found")
 }
 return res.status(200).json(new ApiResponse(200,channel[0], "Channel fetched successfully"));
 });

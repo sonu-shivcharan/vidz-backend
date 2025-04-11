@@ -55,7 +55,7 @@ router.route("/update-cover-image").post(
   updateUserCoverImage
 );
 
-router.route("/:username").get(verifyJWT, getUserChannelProfile);
+router.route("/c/:username").get(verifyJWT, getUserChannelProfile);
 
 router.route("/watch-history").get(verifyJWT, getUserWatchHistory);
 

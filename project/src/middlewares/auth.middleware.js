@@ -23,8 +23,9 @@ export const verifyJWT = asyncHandler(async (req, _res, next) => {
     req.user = user;
     next();
   } catch (error) {
+    console.log('error', error)
     throw new ApiError(
-      500,
+      error.statusCode,
       error?.message || "Something went wrong while validating user"
     );
   }
