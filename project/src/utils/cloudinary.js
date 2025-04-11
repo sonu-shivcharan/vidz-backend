@@ -25,7 +25,8 @@ async function uploadFileToCloudinary(pathToFile){
 }
 
 
-async function deleteFileFromCloudinary(fileId) {
+async function deleteFileFromCloudinary(fileUrl) {
+    const fileId = getAssetIdFromURL(fileUrl);
     console.log('Deleting file', fileId)
     try{
         if(!fileId) return null;
@@ -38,7 +39,7 @@ async function deleteFileFromCloudinary(fileId) {
 }
 
 
-const getAssetIdFromURL = (url) => {
+function getAssetIdFromURL(url){
   // Use URL parsing to extract the last part of the path
   const parsedUrl = new URL(url);
   // Get the pathname and split it
