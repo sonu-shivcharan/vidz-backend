@@ -25,12 +25,16 @@ async function uploadFileToCloudinary(pathToFile){
 }
 
 
-async function deleteFileFromCloudinary(fileUrl) {
+async function deleteFileFromCloudinary(fileUrl, isVideo=false) {
     const fileId = getAssetIdFromURL(fileUrl);
-    console.log('Deleting file', fileId)
+    const fileType=isVideo?"video":"image";
+    console.log(`Deleting ${fileType} file id : ${fileId}`);
     try{
         if(!fileId) return null;
-        const response = await cloudinary.uploader.destroy(fileId);
+
+        const response = await cloudinary.uploader.destroy(fileId, {resource_type: fileType});
+        console.log("deletion response : " , response);
+        
         return response;
     }catch(error){
         console.log("Error deleting file from cloudinary", error);
