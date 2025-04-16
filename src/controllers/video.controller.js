@@ -1,6 +1,6 @@
 import mongoose, { isValidObjectId } from "mongoose";
 import { Video } from "../models/video.model.js";
-import { User } from "../models/user.model.js";
+// import { User } from "../models/user.model.js";
 import ApiError from "../utils/apiError.js";
 import ApiResponse from "../utils/apiResponse.js";
 import {
@@ -18,6 +18,9 @@ const getAllVideos = asyncHandler(async (req, res) => {
     sortType = "asc",
     userId,
   } = req.query;
+  // console.log({limit, page, query, userId, sortBy});
+  
+  
   //TODO: get all videos based on query, sort, pagination
   // const filters={}
   // const sortOptions = {};
@@ -41,7 +44,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
     {
       $match: {
         isPublished: true,
-        ...(userId && isValidObjectId(userId) && {owner: userId}),
+        ...(userId?.trim() && isValidObjectId(userId) && {owner: userId}),
         ...(query && {
           $or: [
             { title: { $regex: query, $options: "i" } },
