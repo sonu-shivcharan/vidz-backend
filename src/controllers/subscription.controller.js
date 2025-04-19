@@ -54,51 +54,53 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
   if (!isValidObjectId(channelId)) {
     throw new ApiError(400, "Invalid channel id");
   }
+  const options = {
+    page: Number(page),
+    limit: Number(limit),
+    sort: { createdAt: -1 },
+    customLabels: {
+      totalDocs: "count",
+      docs: "subscribers",
+    },
+  };
   try {
-    const subscribers = await Subscription.aggregatePaginate(
-      [
-        {
-          $match: {
-            channel: new mongoose.Types.ObjectId(String(channelId)),
-          },
+    const subscribers = await Subscription.aggregatePaginate([
+      {
+        $match: {
+          channel: new mongoose.Types.ObjectId(String(channelId)),
         },
-        {
-          $lookup: {
-            from: "users",
-            localField: "subscriber",
-            foreignField: "_id",
-            as: "subscriber",
-            pipeline: [
-              {
-                $project: {
-                  _id: 1,
-                  username: 1,
-                  fullName: 1,
-                  email: 1,
-                  avatar: 1,
-                  coverImage: 1,
-                },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "subscriber",
+          foreignField: "_id",
+          as: "subscriber",
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                username: 1,
+                fullName: 1,
+                email: 1,
+                avatar: 1,
+                coverImage: 1,
               },
-            ],
-          },
+            },
+          ],
         },
-        {
-          $addFields: {
-            subscriber: { $first: "$subscriber" },
-            subscribedAt: "$createdAt",
-          },
+      },
+      {
+        $addFields: {
+          subscriber: { $first: "$subscriber" },
+          subscribedAt: "$createdAt",
         },
-        {
-          $unset: ["channel", "updatedAt", "createdAt"],
-        },
-      ],
-      { page: page, limit: limit }
-    );
+      },
+      {
+        $unset: ["channel", "updatedAt", "createdAt"],
+      },
+    ], options);
 
-    if (subscribers) {
-      subscribers["subscribers"] = subscribers["docs"];
-      delete subscribers["docs"];
-    }
     return res
       .status(200)
       .json(
