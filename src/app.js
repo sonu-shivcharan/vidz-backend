@@ -24,6 +24,8 @@ import likeRouter from "./routes/like.route.js"
 import dashboardRouter from "./routes/dashboard.route.js"
 import playlistRouter from "./routes/playlist.route.js"
 import tweetRouter from "./routes/tweet.route.js"
+import healthcheckRouter  from "./routes/healthcheck.route.js";
+import ApiResponse from "./utils/apiResponse.js";
 
 app.use("/api/v1/users", userRouter)
 app.use("/api/v1/videos", videoRouter)
@@ -32,5 +34,16 @@ app.use("/api/v1/comments", commentRouter)
 app.use("/api/v1/likes", likeRouter)
 app.use("/api/v1/dashboard", dashboardRouter)
 app.use("/api/v1/playlist", playlistRouter)
-app.use("/api/v1/tweets", tweetRouter)
+app.use("/api/v1/tweets", tweetRouter);
+
+// health check
+
+app.use("/api/v1/health",healthcheckRouter);
+
+
+app.get("/", (req, res) => {
+
+    return res.status(200).json(new ApiResponse(200, {status:"OK"}, "Server is up and running"));
+
+})
 export default app;
