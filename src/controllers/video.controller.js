@@ -5,9 +5,11 @@ import ApiError from "../utils/apiError.js";
 import ApiResponse from "../utils/apiResponse.js";
 import {
   deleteFileFromCloudinary,
+  generateCloudinaryApiSign,
   uploadFileToCloudinary,
 } from "../utils/cloudinary.js";
 import asyncHandler from "../utils/asyncHandler.js";
+import { CLOUDINARY_VIDEO_FOLDER } from "../constants.js";
 
 const getAllVideos = asyncHandler(async (req, res) => {
   const {
@@ -19,8 +21,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
     userId,
   } = req.query;
   // console.log({limit, page, query, userId, sortBy});
-  
-  
+
   //TODO: get all videos based on query, sort, pagination
   // const filters={}
   // const sortOptions = {};
@@ -39,50 +40,52 @@ const getAllVideos = asyncHandler(async (req, res) => {
   // const videos = await Video.find(filters).sort(sortOptions).limit(limit).skip((page-1)*limit)
   // const videoCount = videos.length;
 
-
-  const videos = await Video.aggregatePaginate( [
-    {
-      $match: {
-        isPublished: true,
-        ...(userId?.trim() && isValidObjectId(userId) && {owner: userId}),
-        ...(query && {
-          $or: [
-            { title: { $regex: query, $options: "i" } },
-            { description: { $regex: query, $options: "i" } },
-          ],
-        }),
+  const videos = await Video.aggregatePaginate(
+    [
+      {
+        $match: {
+          isPublished: true,
+          ...(userId?.trim() && isValidObjectId(userId) && { owner: userId }),
+          ...(query && {
+            $or: [
+              { title: { $regex: query, $options: "i" } },
+              { description: { $regex: query, $options: "i" } },
+            ],
+          }),
+        },
       },
-    },
-    {
-      $lookup: {
-        from: "users",
-        localField: "owner",
-        foreignField: "_id",
-        as: "owner",
-        pipeline: [
-          {
-            $project: {
-              _id: 1,
-              username: 1,
-              avatar: 1,
-              email: 1,
+      {
+        $lookup: {
+          from: "users",
+          localField: "owner",
+          foreignField: "_id",
+          as: "owner",
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                username: 1,
+                avatar: 1,
+                email: 1,
+              },
             },
-          },
-        ],
+          ],
+        },
       },
-    },
-    {
-      $addFields: {
-        owner: { $first: "$owner" },
+      {
+        $addFields: {
+          owner: { $first: "$owner" },
+        },
       },
-    },
+      {
+        $sort: { [sortBy]: sortType == "asc" ? 1 : -1 },
+      },
+    ],
     {
-      $sort: { [sortBy]: sortType == "asc" ? 1 : -1 },
-    },
-  ],{
-    page: Number(page),
-    limit: Number(limit),
-  });
+      page: Number(page),
+      limit: Number(limit),
+    }
+  );
   return res
     .status(200)
     .json(new ApiResponse(200, videos, "Fetched videos successfully"));
@@ -163,21 +166,21 @@ const getVideoById = asyncHandler(async (req, res) => {
         },
       },
       {
-        $lookup:{
-          from:"likes",
-          localField:"_id",
-          foreignField:"video",
-          as:"likes"
-        }
+        $lookup: {
+          from: "likes",
+          localField: "_id",
+          foreignField: "video",
+          as: "likes",
+        },
       },
       {
         $addFields: {
           owner: {
             $first: "$owner",
           },
-          likes:{
-            $size: "$likes"
-          }
+          likes: {
+            $size: "$likes",
+          },
         },
       },
     ]);
@@ -292,6 +295,24 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, updatedVideo, `video ${publishedStatus}`));
 });
 
+const getCloudinaryApiSignature = asyncHandler(async (req, res) => {
+  const apiSign = await generateCloudinaryApiSign();
+  if (!apiSign) {
+    throw new ApiError(500, "Something went wrong while generating signature");
+  }
+  console.log("apiSign", apiSign);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { ...apiSign, folder: CLOUDINARY_VIDEO_FOLDER },
+        "Signature generated"
+      )
+    );
+});
+
 export {
   getAllVideos,
   publishAVideo,
@@ -299,4 +320,5 @@ export {
   updateVideo,
   deleteVideo,
   togglePublishStatus,
+  getCloudinaryApiSignature,
 };

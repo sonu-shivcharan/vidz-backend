@@ -1,6 +1,7 @@
 import {v2 as cloudinary } from "cloudinary"
 import fs from "fs"
 import ApiError from "./apiError.js";
+import { CLOUDINARY_VIDEO_FOLDER } from "../constants.js";
 cloudinary.config({ 
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
     api_key: process.env.CLOUDINARY_API_KEY, 
@@ -54,4 +55,24 @@ function getAssetIdFromURL(url){
   }
   return false
 }
-export {uploadFileToCloudinary, deleteFileFromCloudinary, getAssetIdFromURL};
+
+
+async function generateCloudinaryApiSign (){
+    const timestamp = Math.round(new Date().getTime() / 1000);
+    const signature = cloudinary.utils.api_sign_request(
+      {
+        timestamp,
+        folder: CLOUDINARY_VIDEO_FOLDER,
+      },
+      process.env.CLOUDINARY_API_SECRET
+    );
+    return {
+      apiKey: process.env.CLOUDINARY_API_KEY,
+      cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+      signature,
+      timestamp,
+
+    };
+
+}
+export {uploadFileToCloudinary, deleteFileFromCloudinary, getAssetIdFromURL, generateCloudinaryApiSign};
