@@ -90,9 +90,9 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
 const publishAVideo = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
-  if (!title.trim()) {
+  if (!title?.trim()) {
     throw new ApiError(400, "Video title is required.");
-  } else if (!description.trim()) {
+  } else if (!description?.trim()) {
     throw new ApiError(400, "Video description is required.");
   }
   const files = req.files;
