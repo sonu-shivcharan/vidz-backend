@@ -43,7 +43,7 @@ router.route("/test").get((req, res) => {
 router.route("/logout").post(verifyJWT, logoutUser);
 
 router.route("/refresh-token").post(refreshAccessToken);
-router.route("/current-user").get(verifyJWT, getCurrentUser);
+router.route("/").get(verifyJWT, getCurrentUser);
 router.route("/change-password").patch(verifyJWT, changePassword);
 router.route("/update").patch(verifyJWT, updateAccountDetails);
 router.route("/update-avatar").post(
