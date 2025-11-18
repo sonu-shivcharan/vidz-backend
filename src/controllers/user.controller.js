@@ -14,6 +14,9 @@ const options = {
   secure: true,
 };
 
+const ONE_DAY_IN_MS = 1 * 24 * 60 * 60 * 100;
+const SEVEN_DAYS_IN_MS = 1 * 24 * 60 * 60 * 100;
+
 // step1 parse the body  and extract username password
 // step2 check is user already exists
 //step2 if not the create user
@@ -130,8 +133,8 @@ const loginUser = asyncHandler(async (req, res) => {
     "-password -refreshToken"
   );
 
-  res.cookie("accessToken", accessToken, options);
-  res.cookie("refreshToken", refreshToken, options);
+  res.cookie("accessToken", accessToken, {...options, maxAge:ONE_DAY_IN_MS}); 
+  res.cookie("refreshToken", refreshToken, {...options, maxAge: SEVEN_DAYS_IN_MS}); 
   return res.status(200).json(
     new ApiResponse(
       200,
@@ -198,8 +201,8 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
     return res
       .status(200)
-      .cookie("accessToken", accessToken, options)
-      .cookie("accessToken", newRefreshToken, options)
+      .cookie("accessToken", accessToken, {...options, maxAge:ONE_DAY_IN_MS})
+      .cookie("refreshToken", newRefreshToken, {...options, maxAge:SEVEN_DAYS_IN_MS})
       .json(
         new ApiResponse(
           200,
