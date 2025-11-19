@@ -9,13 +9,13 @@ import {
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 
-const options = {
+export const options = {
   httpOnly: true,
   secure: true,
 };
 
-const ONE_DAY_IN_MS = 1 * 24 * 60 * 60 * 100;
-const SEVEN_DAYS_IN_MS = 1 * 24 * 60 * 60 * 100;
+export const ONE_DAY_IN_MS = 1 * 24 * 60 * 60 * 100;
+export const SEVEN_DAYS_IN_MS = 1 * 24 * 60 * 60 * 100;
 
 // step1 parse the body  and extract username password
 // step2 check is user already exists
@@ -466,6 +466,7 @@ const test = asyncHandler(async (req, res)=>{
   return res.json(new ApiResponse(200, "Runing", "Running"))
 })
 export {
+  generateAccessAndRefreshToken,
   registerUser,
   loginUser,
   logoutUser,
