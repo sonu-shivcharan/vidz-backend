@@ -7,7 +7,7 @@ const MODE = process.env.NODE_ENV == "development" ? "dev" : "tiny"
 
 app.use(morgan(MODE))
 app.use(cors({
-    origin:process.env.CORS_ORIGIN,
+    origin:process.env.CORS_ORIGIN?.split(","),
     credentials:true
 }))
 
