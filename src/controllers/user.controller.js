@@ -8,14 +8,12 @@ import {
 } from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
+import { ACCESS_TOKEN_EXPIRY, REFRESH_TOKEN_EXPIRY } from "../constants.js";
 
 export const options = {
   httpOnly: true,
   secure: true,
 };
-
-export const ONE_DAY_IN_MS = 1 * 24 * 60 * 60 * 100;
-export const SEVEN_DAYS_IN_MS = 1 * 24 * 60 * 60 * 100;
 
 // step1 parse the body  and extract username password
 // step2 check is user already exists
@@ -133,8 +131,8 @@ const loginUser = asyncHandler(async (req, res) => {
     "-password -refreshToken"
   );
 
-  res.cookie("accessToken", accessToken, {...options, maxAge:ONE_DAY_IN_MS}); 
-  res.cookie("refreshToken", refreshToken, {...options, maxAge: SEVEN_DAYS_IN_MS}); 
+  res.cookie("accessToken", accessToken, {...options, maxAge: ACCESS_TOKEN_EXPIRY}); 
+  res.cookie("refreshToken", refreshToken, {...options, maxAge: REFRESH_TOKEN_EXPIRY}); 
   return res.status(200).json(
     new ApiResponse(
       200,
@@ -161,10 +159,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     }
   );
   console.log("/logout ", req.user._id);
-  const options = {
-    httpOnly: true,
-    secure: true,
-  };
+ 
   res.clearCookie("accessToken", options);
   res.clearCookie("refreshToken", options);
   return res.status(200).json(new ApiResponse(200, {}, "Logout success"));
@@ -201,8 +196,8 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
     return res
       .status(200)
-      .cookie("accessToken", accessToken, {...options, maxAge:ONE_DAY_IN_MS})
-      .cookie("refreshToken", newRefreshToken, {...options, maxAge:SEVEN_DAYS_IN_MS})
+      .cookie("accessToken", accessToken, {...options, maxAge: ACCESS_TOKEN_EXPIRY})
+      .cookie("refreshToken", newRefreshToken, {...options, maxAge: REFRESH_TOKEN_EXPIRY})
       .json(
         new ApiResponse(
           200,
@@ -461,10 +456,6 @@ return res.status(200).json(new ApiResponse(200,channel[0], "Channel fetched suc
 });
 
 
-const test = asyncHandler(async (req, res)=>{
-  console.log('req', await req.file)
-  return res.json(new ApiResponse(200, "Runing", "Running"))
-})
 export {
   generateAccessAndRefreshToken,
   registerUser,
@@ -478,5 +469,4 @@ export {
   updateUserCoverImage,
   getUserWatchHistory,
   getUserChannelProfile,
-  test
 };
