@@ -10,7 +10,6 @@ import {
   registerUser,
   updateAccountDetails,
   updateUserAvatar,
-  test,
   updateUserCoverImage,
 } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
@@ -35,9 +34,7 @@ router.route("/register").post(
 );
 
 router.route("/login").post(loginUser);
-router.route("/test").get((req, res) => {
-  return res.json({ message: "Tets" });
-});
+
 // secured routes
 
 router.route("/logout").post(verifyJWT, logoutUser);
@@ -63,6 +60,6 @@ router.route("/c/:username").get(verifyJWT, getUserChannelProfile);
 router.route("/watch-history").get(verifyJWT, getUserWatchHistory);
 
 
-router.route("/test/file").post(verifyJWT, upload.single("avatar"), test)
+// router.route("/test/file").post(verifyJWT, upload.single("avatar"), test)
 
 export default router;
