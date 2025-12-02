@@ -4,10 +4,9 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { User } from "../models/user.model.js";
 import {
   generateAccessAndRefreshToken,
-  ONE_DAY_IN_MS,
   options,
-  SEVEN_DAYS_IN_MS,
 } from "../controllers/user.controller.js";
+import { ACCESS_TOKEN_EXPIRY, REFRESH_TOKEN_EXPIRY } from "../constants.js";
 
 export const verifyJWT = asyncHandler(async (req, res, next) => {
   try {
@@ -65,10 +64,13 @@ async function refreshAccessToken(refreshToken, request, response) {
   const { accessToken, refreshToken: newRefreshToken } =
     await generateAccessAndRefreshToken(user._id);
   response
-    .cookie("accessToken", accessToken, { ...options, maxAge: ONE_DAY_IN_MS })
+    .cookie("accessToken", accessToken, {
+      ...options,
+      maxAge: ACCESS_TOKEN_EXPIRY,
+    })
     .cookie("refreshToken", newRefreshToken, {
       ...options,
-      maxAge: SEVEN_DAYS_IN_MS,
+      maxAge: REFRESH_TOKEN_EXPIRY,
     });
-    request.user = user;
+  request.user = user;
 }
