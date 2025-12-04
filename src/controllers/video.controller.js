@@ -11,6 +11,11 @@ import {
 import asyncHandler from "../utils/asyncHandler.js";
 import { CLOUDINARY_VIDEO_FOLDER } from "../constants.js";
 
+function isUrl(str) {
+  const urlRegex =
+    /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
+  return urlRegex.test(str);
+}
 const getAllVideos = asyncHandler(async (req, res) => {
   const {
     page = 1,
@@ -137,6 +142,61 @@ const publishAVideo = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, video, "Video Uploaded successfully"));
 });
 
+// Publishes the video directly
+/**
+ * Expects the following in req.body:
+ *   - title
+ *   - description
+ *   - videoUrl (URL of the already uploaded video)
+ *   - duration
+ *   - Uses req.user._id as the userId.
+ *
+ * Note:
+ * - The function receives a video URL instead of a raw video file.
+ * - The thumbnail is provided as an uploaded file.
+ */
+
+const publishVideoDirect = asyncHandler(async (req, res) => {
+  const { title, description, videoUrl, duration } = req.body;
+  console.log('req.files', req.file);
+  const thumbnailLocalPath = req.file?.path;
+  if (!title?.trim()) {
+    throw new ApiError(400, "Video title is required.");
+  } else if (!description?.trim()) {
+    throw new ApiError(400, "Video description is required.");
+  }
+  if(!videoUrl?.trim() && isUrl(videoUrl)){
+    throw new ApiError(400, "Video file is required.");
+  }
+  if(!duration || isNaN(duration)){
+    throw new ApiError(400, "Video duration is required.");
+  }
+  if(!thumbnailLocalPath){
+    throw new ApiError(400, "Video thumbnail is required.");
+  }
+  const thumbnail = await uploadFileToCloudinary(thumbnailLocalPath);
+  
+  const userId = String(req.user._id); //converting user id explicitly to string
+  const video = await Video.create({
+    title: title.trim(),
+    description: description.trim(),
+    owner: userId,
+    isPublished: true,
+    videoFile:videoUrl,
+    duration,
+    thumbnail: thumbnail.url,
+  });
+  if (!video) {
+    throw new ApiError(
+      500,
+      "Something went wrong while publshing video",
+      video
+    );
+  }
+  return res
+    .status(200)
+    .json(new ApiResponse(200, video, "Video Uploaded successfully"));
+})
 const getVideoById = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   if (!isValidObjectId(videoId)) {
@@ -321,4 +381,5 @@ export {
   deleteVideo,
   togglePublishStatus,
   getCloudinaryApiSignature,
+  publishVideoDirect
 };

@@ -5,6 +5,7 @@ import {
   getCloudinaryApiSignature,
   getVideoById,
   publishAVideo,
+  publishVideoDirect,
   togglePublishStatus,
   updateVideo,
 } from "../controllers/video.controller.js";
@@ -30,6 +31,8 @@ router
     publishAVideo
   );
 
+// publishes the video directly by takin the video uploaded url 
+router.route("/publish/direct").post(upload.single("thumbnail"),publishVideoDirect)
 router
   .route("/signature")
   .get(getCloudinaryApiSignature);
