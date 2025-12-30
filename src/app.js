@@ -29,6 +29,7 @@ import playlistRouter from "./routes/playlist.route.js";
 import tweetRouter from "./routes/tweet.route.js";
 import healthcheckRouter from "./routes/healthcheck.route.js";
 import ApiResponse from "./utils/apiResponse.js";
+import { errorHandler } from "./middlewares/error.middlerware.js";
 
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/videos", videoRouter);
@@ -49,13 +50,5 @@ app.get("/", (req, res) => {
     .json(new ApiResponse(200, { status: "OK" }, "Server is up and running"));
 });
 // global error handler
-app.use((error, _req, res, _next) => {
-  console.log("error", error);
-  const status = error.statusCode || 500;
-  const message = error.message || "Something went wrong";
-  const errors = error.errors || [];
-  return res
-    .status(status)
-    .json({ statusCode: status, message, errors, success: false });
-});
+app.use(errorHandler);
 export default app;
