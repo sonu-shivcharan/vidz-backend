@@ -7,8 +7,9 @@ import {
   uploadFileToCloudinary,
 } from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
-import mongoose from "mongoose";
+import mongoose, { isValidObjectId } from "mongoose";
 import { ACCESS_TOKEN_EXPIRY, REFRESH_TOKEN_EXPIRY } from "../constants.js";
+import { Video } from "../models/video.model.js";
 
 export const options = {
   httpOnly: true,
@@ -356,7 +357,6 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
 
 const getUserWatchHistory = asyncHandler(async (req, res) => {
   const userId = req.user._id;
-  console.log("object id", userId);
   const watchHistory = await User.aggregate([
     {
       $match: {
@@ -373,7 +373,7 @@ const getUserWatchHistory = asyncHandler(async (req, res) => {
           {
             $lookup: {
               from: "users",
-              localField: "userId",
+              localField: "owner",
               foreignField: "_id",
               as: "owner",
               pipeline: [
@@ -476,7 +476,34 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, channel[0], "Channel fetched successfully"));
 });
-
+const addVideoToWatchHistory = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+  const userId = req.user._id;
+  if (!isValidObjectId(videoId)) {
+    throw new ApiError(400, "Invalid video id");
+  }
+  const user = await User.findByIdAndUpdate(
+    userId,
+    {
+      $addToSet: {
+        watchHistory: videoId,
+      },
+    },
+    { new: true }
+  );
+  await Video.findByIdAndUpdate(
+    videoId,
+    {
+      $inc: {
+        views: 1,
+      },
+    },
+    { new: true }
+  );
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Video added to watch history"));
+});
 export {
   generateAccessAndRefreshToken,
   registerUser,
@@ -490,4 +517,5 @@ export {
   updateUserCoverImage,
   getUserWatchHistory,
   getUserChannelProfile,
+  addVideoToWatchHistory,
 };

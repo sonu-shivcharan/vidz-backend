@@ -11,14 +11,15 @@ import {
   updateAccountDetails,
   updateUserAvatar,
   updateUserCoverImage,
+  addVideoToWatchHistory,
 } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 const router = Router();
-router.use((req,res,next)=>{
-  console.log("[user]")
+router.use((req, res, next) => {
+  console.log("[user]");
   next();
-})
+});
 router.route("/register").post(
   upload.fields([
     {
@@ -43,22 +44,20 @@ router.route("/refresh-token").post(refreshAccessToken);
 router.route("/").get(verifyJWT, getCurrentUser);
 router.route("/change-password").patch(verifyJWT, changePassword);
 router.route("/update").patch(verifyJWT, updateAccountDetails);
-router.route("/update-avatar").post(
-  verifyJWT,
-  upload.single("avatar"),
-  updateUserAvatar
-);
+router
+  .route("/update-avatar")
+  .post(verifyJWT, upload.single("avatar"), updateUserAvatar);
 
-router.route("/update-cover-image").post(
-  verifyJWT,
-  upload.single("coverImage"),
-  updateUserCoverImage
-);
+router
+  .route("/update-cover-image")
+  .post(verifyJWT, upload.single("coverImage"), updateUserCoverImage);
 
 router.route("/c/:username").get(verifyJWT, getUserChannelProfile);
 
 router.route("/watch-history").get(verifyJWT, getUserWatchHistory);
-
+router
+  .route("/watch-history/add/:videoId")
+  .get(verifyJWT, addVideoToWatchHistory);
 
 // router.route("/test/file").post(verifyJWT, upload.single("avatar"), test)
 
