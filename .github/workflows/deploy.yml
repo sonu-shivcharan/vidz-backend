@@ -37,3 +37,21 @@ jobs:
 
           docker push $IMAGE_URI:latest
           docker push $IMAGE_URI:$COMMIT_SHA
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            docker pull ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest
+            docker stop vidz-backend || true
+            docker rm vidz-backend || true
+            docker run -d \
+              --name vidz-backend \
+              --network vidz-net \
+              -p 8000:8000 \
+              --env-file /home/ec2-user/vidz.env \
+              --restart unless-stopped \
+              ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest
