@@ -10,10 +10,10 @@ import {
 } from "../utils/cloudinary.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { CLOUDINARY_VIDEO_FOLDER } from "../constants.js";
+import { Subscription } from "../models/subscription.model.js";
 
 function isUrl(str) {
-  const urlRegex =
-    /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
+  const urlRegex = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
   return urlRegex.test(str);
 }
 const getAllVideos = asyncHandler(async (req, res) => {
@@ -158,31 +158,31 @@ const publishAVideo = asyncHandler(async (req, res) => {
 
 const publishVideoDirect = asyncHandler(async (req, res) => {
   const { title, description, videoUrl, duration } = req.body;
-  console.log('req.files', req.file);
+  console.log("req.files", req.file);
   const thumbnailLocalPath = req.file?.path;
   if (!title?.trim()) {
     throw new ApiError(400, "Video title is required.");
   } else if (!description?.trim()) {
     throw new ApiError(400, "Video description is required.");
   }
-  if(!videoUrl?.trim() && isUrl(videoUrl)){
+  if (!videoUrl?.trim() && isUrl(videoUrl)) {
     throw new ApiError(400, "Video file is required.");
   }
-  if(!duration || isNaN(duration)){
+  if (!duration || isNaN(duration)) {
     throw new ApiError(400, "Video duration is required.");
   }
-  if(!thumbnailLocalPath){
+  if (!thumbnailLocalPath) {
     throw new ApiError(400, "Video thumbnail is required.");
   }
   const thumbnail = await uploadFileToCloudinary(thumbnailLocalPath);
-  
+
   const userId = String(req.user._id); //converting user id explicitly to string
   const video = await Video.create({
     title: title.trim(),
     description: description.trim(),
     owner: userId,
     isPublished: true,
-    videoFile:videoUrl,
+    videoFile: videoUrl,
     duration,
     thumbnail: thumbnail.url,
   });
@@ -196,7 +196,7 @@ const publishVideoDirect = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(new ApiResponse(200, video, "Video Uploaded successfully"));
-})
+});
 const getVideoById = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   if (!isValidObjectId(videoId)) {
@@ -241,15 +241,35 @@ const getVideoById = asyncHandler(async (req, res) => {
           likes: {
             $size: "$likes",
           },
+          isLiked: {
+            $in: [
+              new mongoose.Types.ObjectId(String(req.user._id)),
+              "$likes.likedBy",
+            ],
+          },
         },
       },
     ]);
-    if (!video) {
+
+    if (video.length === 0) {
       throw new ApiError(404, "Video not found");
+    }
+    // check if the channel is subscribed by the user
+    const subscription = await Subscription.findOne({
+      channel: video[0].owner._id,
+      subscriber: req.user._id,
+    }).lean();
+
+    if (subscription) {
+      video[0].owner.isSubscribed = true;
+    } else {
+      video[0].owner.isSubscribed = false;
     }
     return res
       .status(200)
-      .json(new ApiResponse(200, video, "Video fetched successfully"));
+      .json(
+        new ApiResponse(200, { video: video[0] }, "Video fetched successfully")
+      );
   } catch (error) {
     console.error("Error while finding video:", error);
     throw new ApiError(
@@ -381,5 +401,5 @@ export {
   deleteVideo,
   togglePublishStatus,
   getCloudinaryApiSignature,
-  publishVideoDirect
+  publishVideoDirect,
 };
