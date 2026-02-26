@@ -64,42 +64,45 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
     },
   };
   try {
-    const subscribers = await Subscription.aggregatePaginate([
-      {
-        $match: {
-          channel: new mongoose.Types.ObjectId(String(channelId)),
+    const subscribers = await Subscription.aggregatePaginate(
+      [
+        {
+          $match: {
+            channel: new mongoose.Types.ObjectId(String(channelId)),
+          },
         },
-      },
-      {
-        $lookup: {
-          from: "users",
-          localField: "subscriber",
-          foreignField: "_id",
-          as: "subscriber",
-          pipeline: [
-            {
-              $project: {
-                _id: 1,
-                username: 1,
-                fullName: 1,
-                email: 1,
-                avatar: 1,
-                coverImage: 1,
+        {
+          $lookup: {
+            from: "users",
+            localField: "subscriber",
+            foreignField: "_id",
+            as: "subscriber",
+            pipeline: [
+              {
+                $project: {
+                  _id: 1,
+                  username: 1,
+                  fullName: 1,
+                  email: 1,
+                  avatar: 1,
+                  coverImage: 1,
+                },
               },
-            },
-          ],
+            ],
+          },
         },
-      },
-      {
-        $addFields: {
-          subscriber: { $first: "$subscriber" },
-          subscribedAt: "$createdAt",
+        {
+          $addFields: {
+            subscriber: { $first: "$subscriber" },
+            subscribedAt: "$createdAt",
+          },
         },
-      },
-      {
-        $unset: ["channel", "updatedAt", "createdAt"],
-      },
-    ], options);
+        {
+          $unset: ["channel", "updatedAt", "createdAt"],
+        },
+      ],
+      options
+    );
 
     return res
       .status(200)
@@ -116,8 +119,9 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
 
 // controller to return channel list to which user has subscribed
 const getSubscribedChannels = asyncHandler(async (req, res) => {
-  const { subscriberId } = req.params;
-  console.log("subscriberId", subscriberId);
+  // const { subscriberId } = req.params;
+  const subscriberId = req.user._id;
+
   if (!isValidObjectId(subscriberId)) {
     throw new ApiError(400, "Invalid subscriber id");
   }
@@ -153,6 +157,11 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
       {
         $addFields: {
           channel: { $first: "$channel" },
+        },
+      },
+      {
+        $replaceRoot: {
+          newRoot: "$channel",
         },
       },
     ]);
