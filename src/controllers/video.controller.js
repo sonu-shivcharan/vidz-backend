@@ -23,7 +23,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
     query,
     sortBy = "createdAt",
     sortType = "asc",
-    userId,
+    userId: ownerId,
   } = req.query;
   // console.log({limit, page, query, userId, sortBy});
 
@@ -45,12 +45,17 @@ const getAllVideos = asyncHandler(async (req, res) => {
   // const videos = await Video.find(filters).sort(sortOptions).limit(limit).skip((page-1)*limit)
   // const videoCount = videos.length;
 
+  if (ownerId?.trim() && !isValidObjectId(ownerId)) {
+    throw new ApiError(400, "Invalid owner id");
+  }
   const videos = await Video.aggregatePaginate(
     [
       {
         $match: {
           isPublished: true,
-          ...(userId?.trim() && isValidObjectId(userId) && { owner: userId }),
+          ...(ownerId?.trim() && {
+            owner: new mongoose.Types.ObjectId(String(ownerId)),
+          }),
           ...(query && {
             $or: [
               { title: { $regex: query, $options: "i" } },
