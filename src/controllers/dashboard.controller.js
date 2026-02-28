@@ -1,8 +1,5 @@
 import mongoose from "mongoose";
 import { Video } from "../models/video.model.js";
-import { Subscription } from "../models/subscription.model.js";
-import { Like } from "../models/like.model.js";
-import ApiError from "../utils/apiError.js";
 import ApiResponse from "../utils/apiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { User } from "../models/user.model.js";
@@ -33,58 +30,60 @@ const getChannelStats = asyncHandler(async (req, res) => {
       },
     },
     {
-      $lookup:{
-        from:"subscriptions",
-        localField:"_id",
-        foreignField:"subscriber",
-        as:"subscribedTo"
-      }
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "subscriber",
+        as: "subscribedTo",
+      },
     },
     {
-      $lookup:{
-        from:"likes",
+      $lookup: {
+        from: "likes",
         let: { videoIds: "$videos._id" },
-        pipeline:[
+        pipeline: [
           {
-            $match:{
-              $expr:{
-                $in:["$video", "$$videoIds"]
+            $match: {
+              $expr: {
+                $in: ["$video", "$$videoIds"],
               },
-            }
-          }
+            },
+          },
         ],
-        as:"videoLikes"
-      }
+        as: "videoLikes",
+      },
     },
     {
       $addFields: {
         totalVideos: { $size: "$videos" },
         totalSubscribers: { $size: "$subscribers" },
-        totalChannelsSubscribedTo:{$size:"$subscribedTo"},
-        totalViews:{
-          $sum:{
-            $map : {input:"$videos", as:"vid", in:"$vid.views"}
-          }
+        totalChannelsSubscribedTo: { $size: "$subscribedTo" },
+        totalViews: {
+          $sum: {
+            $map: { input: "$videos", as: "vid", in: "$vid.views" },
+          },
         },
-        totalVideoLikes:{$size:"$videoLikes"}
+        totalVideoLikes: { $size: "$videoLikes" },
       },
     },
     {
       $project: {
-        username:1,
-        email:1,
-        avatar:1,
-        coverImage:1,
-        totalVideos:1,
-        totalSubscribers:1,
-        totalChannelsSubscribedTo:1,
-        totalViews:1,
-        totalVideoLikes:1,
+        username: 1,
+        email: 1,
+        avatar: 1,
+        coverImage: 1,
+        totalVideos: 1,
+        totalSubscribers: 1,
+        totalChannelsSubscribedTo: 1,
+        totalViews: 1,
+        totalVideoLikes: 1,
       },
     },
   ]);
 
-  return res.status(200).json(new ApiResponse(200, {stats:stats[0]} , "Fetched Stats"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { stats: stats[0] }, "Fetched Stats"));
 });
 
 const getChannelVideos = asyncHandler(async (req, res) => {
