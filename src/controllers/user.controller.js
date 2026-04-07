@@ -14,6 +14,7 @@ import { Video } from "../models/video.model.js";
 export const options = {
   httpOnly: true,
   secure: true,
+  sameSite: "none",
 };
 
 // step1 parse the body  and extract username password
